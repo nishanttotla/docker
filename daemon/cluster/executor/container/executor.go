@@ -45,11 +45,18 @@ func (e *executor) Describe(ctx context.Context) (*api.NodeDescription, error) {
 		}
 	}
 
+	// add v1 plugins to 'plugins'
 	addPlugins("Volume", info.Plugins.Volume)
 	// Add builtin driver "overlay" (the only builtin multi-host driver) to
 	// the plugin list by default.
 	addPlugins("Network", append([]string{"overlay"}, info.Plugins.Network...))
 	addPlugins("Authorization", info.Plugins.Authorization)
+
+	// hard code add one v2 plugin for testing
+	plugins[api.PluginDescription{
+		Type: "Volume",
+		Name: "tiborvass/no-remove",
+	}] = struct{}{}
 
 	pluginFields := make([]api.PluginDescription, 0, len(plugins))
 	for k := range plugins {

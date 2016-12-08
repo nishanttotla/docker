@@ -2,6 +2,7 @@ package scheduler
 
 import (
 	"container/list"
+	"fmt"
 	"time"
 
 	"github.com/docker/swarmkit/api"
@@ -465,6 +466,9 @@ func (s *Scheduler) taskFitNode(ctx context.Context, t *api.Task, nodeID string)
 	}
 	newT := *t
 	s.pipeline.SetTask(t)
+
+	fmt.Println("STARTING TO PROCESS PIPELINE 1")
+
 	if !s.pipeline.Process(&nodeInfo) {
 		// this node cannot accommodate this task
 		newT.Status.Timestamp = ptypes.MustTimestampProto(time.Now())
@@ -574,6 +578,7 @@ func (s *Scheduler) scheduleTaskGroup(ctx context.Context, taskGroup map[string]
 			nodeIter++
 		}
 
+		fmt.Println("STARTING TO PROCESS PIPELINE 2")
 		origNodeIter := nodeIter
 		for failedConstraints[nodeIter%len(nodes)] || !s.pipeline.Process(&nodes[nodeIter%len(nodes)]) {
 			failedConstraints[nodeIter%len(nodes)] = true

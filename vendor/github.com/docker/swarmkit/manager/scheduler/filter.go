@@ -97,6 +97,8 @@ type PluginFilter struct {
 func (f *PluginFilter) SetTask(t *api.Task) bool {
 	c := t.Spec.GetContainer()
 
+	fmt.Println("EVALUATING SETTASK FOR PLUGIN FILTER", c.Mounts)
+
 	var volumeTemplates bool
 	if c != nil {
 		for _, mount := range c.Mounts {
@@ -124,10 +126,16 @@ func (f *PluginFilter) Check(n *NodeInfo) bool {
 	// Get list of plugins on the node
 	nodePlugins := n.Description.Engine.Plugins
 
+	fmt.Println("APPLYING PLUGIN FILTER TO NODE")
+
 	// Check if all volume plugins required by task are installed on node
 	container := f.t.Spec.GetContainer()
 	if container != nil {
 		for _, mount := range container.Mounts {
+
+			fmt.Println("PROCESSING FILTER FOR THIS MOUNT", mount)
+			fmt.Println("PROCESSING FILTER FOR THIS MOUNT", *mount.VolumeOptions.DriverConfig)
+
 			if mount.VolumeOptions != nil && mount.VolumeOptions.DriverConfig != nil {
 				if !f.pluginExistsOnNode("Volume", mount.VolumeOptions.DriverConfig.Name, nodePlugins) {
 					return false
@@ -145,8 +153,10 @@ func (f *PluginFilter) Check(n *NodeInfo) bool {
 	return true
 }
 
+// pluginExistsOnNode returns true if the (pluginName, pluginType) pair is present in nodePlugins
 func (f *PluginFilter) pluginExistsOnNode(pluginType string, pluginName string, nodePlugins []api.PluginDescription) bool {
 	for _, np := range nodePlugins {
+		fmt.Println("TRYING EXISTS ON NODE FOR", np, pluginType, pluginName)
 		if pluginType == np.Type && pluginName == np.Name {
 			return true
 		}

@@ -1,6 +1,7 @@
 package scheduler
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/docker/swarmkit/api"
@@ -11,12 +12,7 @@ var (
 		// Always check for readiness first.
 		&ReadyFilter{},
 		&ResourceFilter{},
-
-		// TODO(stevvooe): Do not filter based on plugins since they are lazy
-		// loaded in the engine. We can add this back when we can schedule
-		// plugins in the future.
-		// &PluginFilter{},
-
+		&PluginFilter{},
 		&ConstraintFilter{},
 	}
 )
@@ -56,8 +52,12 @@ func NewPipeline() *Pipeline {
 // Process a node through the filter pipeline.
 // Returns true if all filters pass, false otherwise.
 func (p *Pipeline) Process(n *NodeInfo) bool {
+
+	fmt.Println("IN PIPELINE PROCESSING NOW")
 	for i, entry := range p.checklist {
+		fmt.Println("PROCESSING CHECKLIST ENTRY", i, entry)
 		if entry.enabled && !entry.f.Check(n) {
+			fmt.Println("IS ENABLED, ENTRY", i)
 			// Immediately stop on first failure.
 			p.checklist[i].failureCount++
 			return false
