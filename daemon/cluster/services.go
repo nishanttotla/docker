@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"strings"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/docker/distribution/manifest/manifestlist"
 	"github.com/docker/distribution/reference"
 	apierrors "github.com/docker/docker/api/errors"
 	apitypes "github.com/docker/docker/api/types"
@@ -375,6 +377,32 @@ func (c *Cluster) imageWithDigestString(ctx context.Context, image string, authC
 		dscrptr, err := repo.Tags(ctx).Get(ctx, taggedRef.Tag())
 		if err != nil {
 			return "", err
+		}
+
+		mnfstsrvc, _ := repo.Manifests(ctx)
+		mnfst, _ := mnfstsrvc.Get(ctx, dscrptr.Digest)
+		fmt.Println("MANIFEST: FAT TYPE", reflect.TypeOf(mnfst))
+		// this type turns out to be *manifestlist.DeserializedManifestList
+		// (though it could also be *schema2.DeserializedManifest)
+		// just type cast it to that, and then extract the Manifests object
+		// to get the fat manifest list
+		// to test this, use the friism/golang image with sleep 1000 as the cmd
+
+		// if this statement doesn't cause an exception, we're fine
+		if fatmnfst, ok := mnfst.(*manifestlist.DeserializedManifestList); ok {
+			mnfstlist := fatmnfst.Manifests
+			fmt.Println("MANIFEST: LIST OF PLATFORMS")
+			for i, m := range mnfstlist {
+				fmt.Println("  MANIFEST:", i)
+				fmt.Println("    MANIFEST: ARCHITECTURE", m.Platform.Architecture)
+				fmt.Println("    MANIFEST: OS", m.Platform.OS)
+			}
+		} else {
+			// this should actually be an else if
+			// to check for the schema2 case
+			// because we still need to have platform info
+			// UNLESS there is a default of amd64/linux
+			fmt.Println("MANIFEST: NOT A MULTI-ARCH MANIFEST")
 		}
 
 		namedDigestedRef, err := reference.WithDigest(taggedRef, dscrptr.Digest)
